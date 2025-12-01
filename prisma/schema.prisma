@@ -1,0 +1,39 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+
+  role         String     @default("CLIENT") // ACCOUNTANT | CLIENT
+
+  documents    Document[] @relation("ClientDocuments")
+  uploads      Document[] @relation("UploadedDocuments")
+
+  createdAt    DateTime   @default(now())
+}
+
+model Document {
+  id           String   @id @default(cuid())
+
+  client       User     @relation("ClientDocuments", fields: [clientId], references: [id])
+  clientId     String
+
+  uploadedBy   User     @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  uploadedById String
+
+  type         String   @default("OTHER") // NF | BOLETO | OTHER
+
+  originalName String
+  storedName   String
+  path         String
+  createdAt    DateTime  @default(now())
+}
