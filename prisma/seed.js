@@ -22,7 +22,7 @@ async function main() {
     data: {
       name: 'Ester Contabilidade',
       email,
-      password: hash,
+      passwordHash: hash,   // 👈 AQUI é passwordHash
       role: 'ACCOUNTANT',
     },
   });
@@ -32,7 +32,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Erro no seed:', e);
     process.exit(1);
   })
   .finally(async () => {
