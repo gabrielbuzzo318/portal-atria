@@ -33,43 +33,44 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Portal Contábil da Ester
-        </h1>
+    <main className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">Portal Contábil da Ester</h1>
+        <p className="auth-subtitle">
+          Acesse para visualizar e enviar documentos.
+        </p>
 
-        {error && (
-          <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
-        )}
+        {error && <p className="auth-error">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">E-mail</label>
+        <form onSubmit={handleSubmit}>
+          <div className="auth-field">
+            <label className="auth-label">E-mail</label>
             <input
-              className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-slate-800"
+              className="auth-input"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              type="email"
+              required
             />
           </div>
 
-          <div>
-            <label className="block text-sm mb-1">Senha</label>
+          <div className="auth-field">
+            <label className="auth-label">Senha</label>
             <input
               type="password"
-              className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-slate-800"
+              className="auth-input"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              required
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition"
-          >
+          <button type="submit" className="auth-button">
             Entrar
           </button>
         </form>
+
+        <p className="auth-footer">Desenvolvido por Gabriel para a Ester 💙</p>
       </div>
     </main>
   );

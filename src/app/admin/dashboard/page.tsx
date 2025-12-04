@@ -60,97 +60,90 @@ export default function DashboardAdmin() {
   }
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-8">
-      <header className="flex items-center justify-between mb-2">
-        <div>
-          <h1 className="text-2xl font-bold">Clientes</h1>
-          <p className="text-sm text-gray-500">
-            Portal Contábil da Ester
-          </p>
-        </div>
+    <main className="page">
+      <div className="page-shell">
+        <header className="page-header">
+          <div className="page-title-group">
+            <h1>Clientes</h1>
+            <p>Gerencie os clientes e envie documentos pelo portal.</p>
+          </div>
 
-        <button
-          onClick={handleLogout}
-          className="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-100"
-        >
-          Sair
-        </button>
-      </header>
-
-      <section className="border rounded-2xl bg-white p-4">
-        <h2 className="font-semibold mb-3">Cadastrar novo cliente</h2>
-        <form
-          onSubmit={handleCreateClient}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
-        >
-          <div>
-            <label className="block text-sm mb-1">Nome</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">E-mail</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              type="email"
-              value={newEmail}
-              onChange={e => setNewEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Senha inicial</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              type="text"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full md:w-auto px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold"
-          >
-            Salvar
+          <button onClick={handleLogout} className="btn-outline">
+            Sair
           </button>
-        </form>
-      </section>
+        </header>
 
-      <section className="border rounded-2xl bg-white p-4">
-        <h2 className="font-semibold mb-3">Lista de clientes</h2>
-        {loading && <p>Carregando...</p>}
+        <section className="grid-2">
+          {/* Card de cadastro */}
+          <div className="card">
+            <h2 className="card-title">Cadastrar novo cliente</h2>
+            <form onSubmit={handleCreateClient}>
+              <div className="form-group">
+                <label className="form-label">Nome</label>
+                <input
+                  className="form-input"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">E-mail</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Senha inicial</label>
+                <input
+                  className="form-input"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-        {!loading && clients.length === 0 && (
-          <p className="text-sm text-gray-500">Nenhum cliente cadastrado ainda.</p>
-        )}
+              <button type="submit" className="btn-primary">
+                Salvar cliente
+              </button>
+            </form>
+          </div>
 
-        {!loading && clients.length > 0 && (
-          <ul className="space-y-2">
-            {clients.map(c => (
-              <li
-                key={c.id}
-                className="border rounded-xl px-4 py-2 flex justify-between items-center text-sm bg-slate-50"
-              >
-                <div>
-                  <p className="font-semibold">{c.name}</p>
-                  <p className="text-gray-500">{c.email}</p>
-                </div>
-                <Link
-                  href={`/admin/clientes/${c.id}`}
-                  className="text-slate-900 underline font-medium"
-                >
-                  Ver documentos
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {/* Lista de clientes */}
+          <div className="card">
+            <h2 className="card-title">Lista de clientes</h2>
+
+            {loading && <p>Carregando...</p>}
+
+            {!loading && clients.length === 0 && (
+              <p>Nenhum cliente cadastrado ainda.</p>
+            )}
+
+            {!loading && clients.length > 0 && (
+              <ul className="list">
+                {clients.map(c => (
+                  <li key={c.id} className="list-item">
+                    <div className="list-item-main">
+                      <p className="name">{c.name}</p>
+                      <p className="email">{c.email}</p>
+                    </div>
+                    <Link
+                      href={`/admin/clientes/${c.id}`}
+                      className="link-small"
+                    >
+                      Ver documentos
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

@@ -10,9 +10,23 @@ type Document = {
   createdAt: string;
 };
 
+function formatPeriodKey(dateStr: string) {
+  const d = new Date(dateStr);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function formatPeriodLabel(periodKey: string) {
+  const [year, month] = periodKey.split('-');
+  return `${month}/${year}`;
+}
+
 export default function ClienteDocumentos() {
   const [docs, setDocs] = useState<Document[]>([]);
   const router = useRouter();
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -30,45 +44,82 @@ export default function ClienteDocumentos() {
     load();
   }, []);
 
+  const periods = Array.from(
+    new Set(docs.map(d => formatPeriodKey(d.createdAt))),
+  ).sort((a, b) => (a > b ? -1 : 1));
+
+  const filteredDocs =
+    selectedPeriod === ''
+      ? docs
+      : docs.filter(d => formatPeriodKey(d.createdAt) === selectedPeriod);
+
   return (
-    <main className="p-6 max-w-4xl mx-auto space-y-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Meus documentos</h1>
-          <p className="text-sm text-gray-500">
-            Portal Contábil da Ester
-          </p>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-100"
-        >
-          Sair
-        </button>
-      </header>
+    <main className="page">
+      <div className="page-shell">
+        <header className="page-header">
+          <div className="page-title-group">
+            <h1>Meus documentos</h1>
+            <p>
+              Acesse suas notas fiscais e boletos enviados pela contabilidade.
+            </p>
+          </div>
+          <button onClick={handleLogout} className="btn-outline">
+            Sair
+          </button>
+        </header>
 
-      {docs.length === 0 && (
-        <p className="text-sm text-gray-500">Nenhum documento disponível.</p>
-      )}
-
-      <ul className="space-y-2">
-        {docs.map(doc => (
-          <li
-            key={doc.id}
-            className="border rounded-xl px-4 py-2 flex justify-between text-sm bg-white"
-          >
-            <span>{doc.originalName}</span>
-            <span>{doc.type}</span>
-            <span>{new Date(doc.createdAt).toLocaleString('pt-BR')}</span>
-            <a
-              href={`/api/download/${doc.id}`}
-              className="underline text-slate-900"
+        <div className="card">
+          <div className="filters">
+            <span className="filters-label">Período:</span>
+            <select
+              className="filters-select"
+              value={selectedPeriod}
+              onChange={e => setSelectedPeriod(e.target.value)}
             >
-              Baixar
-            </a>
-          </li>
-        ))}
-      </ul>
+              <option value="">Todos</option>
+              {periods.map(p => (
+                <option key={p} value={p}>
+                  {formatPeriodLabel(p)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filteredDocs.length === 0 && (
+            <p>Nenhum documento disponível neste período.</p>
+          )}
+
+          {filteredDocs.length > 0 && (
+            <ul className="list">
+              {filteredDocs.map(doc => (
+                <li key={doc.id} className="list-item">
+                  <div className="list-item-main">
+                    <p className="name">{doc.originalName}</p>
+                    <p className="email">
+                      {new Date(doc.createdAt).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+
+                  <span className="tag">
+                    {doc.type === 'NF'
+                      ? 'Nota Fiscal'
+                      : doc.type === 'BOLETO'
+                      ? 'Boleto'
+                      : 'Outro'}
+                  </span>
+
+                  <a
+                    href={`/api/download/${doc.id}`}
+                    className="link-small"
+                  >
+                    Baixar
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
