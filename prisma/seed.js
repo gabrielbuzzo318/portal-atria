@@ -22,7 +22,7 @@ async function main() {
     data: {
       name: 'Ester Contabilidade',
       email,
-      passwordHash: hash,
+      password: hash,
       role: 'ACCOUNTANT',
     },
   });
