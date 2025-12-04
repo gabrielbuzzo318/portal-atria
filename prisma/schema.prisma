@@ -1,18 +1,50 @@
+// Gera o client do Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Datasource: SQLite, usando a env DATABASE_URL
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    String @id @default(cuid())
+  name  String
+  email String @unique
+
+  // senha hash, usada no login
+  passwordHash String
+
+  // 'ACCOUNTANT' ou 'CLIENT'
+  role String @default("CLIENT")
+
+  // documentos em que ele é o cliente
+  clientDocuments   Document[] @relation("ClientDocuments")
+  // documentos que ele fez upload (no caso, a Ester)
+  uploadedDocuments Document[] @relation("UploadedDocuments")
+}
+
 model Document {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  client       User     @relation("ClientDocuments", fields: [clientId], references: [id])
-  clientId     String
+  // cliente dono do documento
+  client   User   @relation("ClientDocuments", fields: [clientId], references: [id])
+  clientId String
 
-  uploadedBy   User     @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  // quem fez o upload (normalmente a contadora)
+  uploadedBy   User   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
   uploadedById String
 
-  type         String   @default("OTHER") // NF | BOLETO | OTHER
+  // tipo: NF, BOLETO, OTHER (guardado como string simples)
+  type String @default("OTHER")
 
   originalName String
   storedName   String
   path         String
   createdAt    DateTime @default(now())
 
-  competencia  String?  // campo opcional
+  // competência no formato YYYY-MM (ex: 2025-01)
+  competencia String?
 }
