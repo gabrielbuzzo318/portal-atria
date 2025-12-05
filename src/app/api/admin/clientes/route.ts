@@ -1,41 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser, requireRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, requireRole } from '@/lib/auth';
 
-export async function POST(req: NextRequest) {
-  const user = getAuthUser();
+type Params = { params: { id: string } };
+
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    requireRole(user, ['ACCOUNTANT']);
-  } catch (e) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    const user = getAuthUser();
+    requireRole(user, ['ACCOUNTANT']); // só contador vê docs de cliente
+
+    const clientId = params.id;
+
+    const url = new URL(req.url);
+    const competence = url.searchParams.get('competence') || undefined;
+
+    const where: any = { clientId };
+    if (competence) {
+      where.competence = competence;
+    }
+
+    const documents = await prisma.document.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json({ documents });
+  } catch (err) {
+    console.error('Erro ao listar documentos:', err);
+    return NextResponse.json(
+      { error: 'Erro ao listar documentos' },
+      { status: 500 }
+    );
   }
-
-  const { name, email, password } = await req.json();
-
-  const client = await prisma.user.create({
-    data: {
-      name,
-      email,
-      passwordHash: password, // salva em texto puro
-      role: 'CLIENT',
-    },
-  });
-
-  return NextResponse.json({ client });
-}
-
-export async function GET() {
-  const user = getAuthUser();
-  try {
-    requireRole(user, ['ACCOUNTANT']);
-  } catch (e) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  }
-
-  const clients = await prisma.user.findMany({
-    where: { role: 'CLIENT' },
-    orderBy: { name: 'asc' },
-  });
-
-  return NextResponse.json({ clients });
 }
