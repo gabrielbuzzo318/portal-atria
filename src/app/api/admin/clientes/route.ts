@@ -3,50 +3,27 @@ import { prisma } from '@/lib/prisma';
 import { getAuthUser, requireRole } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-// GET /api/admin/clientes  -> lista clientes
-export async function GET() {
-  try {
-    const user = getAuthUser();
-    requireRole(user, ['ACCOUNTANT']); // só a Ester vê isso
+// ... (GET fica igual ao que já está)
 
-    const clients = await prisma.user.findMany({
-      where: { role: 'CLIENT' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    return NextResponse.json({ clients });
-  } catch (err) {
-    console.error('Erro ao listar clientes:', err);
-    return NextResponse.json(
-      { error: 'Erro ao listar clientes' },
-      { status: 500 },
-    );
-  }
-}
-
-// POST /api/admin/clientes  -> cria cliente novo
 export async function POST(req: NextRequest) {
   try {
     const user = getAuthUser();
     requireRole(user, ['ACCOUNTANT']); // só a Ester cria cliente
 
     const body = await req.json();
-    const {
-      name,
-      email,
-      initialPassword,
-    } = body as {
-      name: string;
-      email: string;
-      initialPassword: string;
-    };
 
-    if (!name || !email || !initialPassword) {
+    // aceita vários nomes possíveis que o front possa mandar
+    const name = (body.name || body.nome) as string | undefined;
+    const email = body.email as string | undefined;
+
+    const senhaBruta =
+      (body.initialPassword ||
+        body.password ||
+        body.senhaInicial ||
+        body.senha) as string | undefined;
+
+    if (!name || !email || !senhaBruta) {
+      console.log('Body recebido em /api/admin/clientes POST:', body);
       return NextResponse.json(
         { error: 'Dados inválidos' },
         { status: 400 },
@@ -64,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hash = await bcrypt.hash(initialPassword, 10);
+    const hash = await bcrypt.hash(senhaBruta, 10);
 
     const client = await prisma.user.create({
       data: {
