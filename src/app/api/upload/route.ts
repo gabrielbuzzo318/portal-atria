@@ -1,93 +1,86 @@
-import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-import { mkdir, writeFile } from 'fs/promises';
-import crypto from 'crypto';
-import { prisma } from '@/lib/prisma';
-import { getAuthUser, requireRole } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import path from "path";
+import { prisma } from "@/lib/prisma";
+import { getAuthUser, requireRole } from "@/lib/auth";
+import { uploadToSupabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
     const user = getAuthUser();
-    requireRole(user, ['ACCOUNTANT']); // só a Ester envia docs
+    requireRole(user, ["ACCOUNTANT"]); // só a Ester envia docs
 
     const formData = await req.formData();
 
-    const clientId = formData.get('clientId') as string | null;
-    const rawType = formData.get('type') as string | null;
-    const competenceRaw = formData.get('competence') as string | null;
-    const file = formData.get('file') as File | null;
+    const clientId = formData.get("clientId") as string | null;
+    const rawType = formData.get("type") as string | null;
+    const competenceRaw = formData.get("competence") as string | null;
+    const file = formData.get("file") as File | null;
 
     if (!clientId || !file) {
       return NextResponse.json(
-        { error: 'Dados inválidos para upload' },
+        { error: "Dados inválidos para upload" },
         { status: 400 }
       );
     }
-    try {
 
-    }catch (err: any) {
-    console.error('Erro no upload:', err);
+    // normaliza tipo pro enum
+    let type: "NF" | "BOLETO" | "OTHER" = "OTHER";
 
-    return NextResponse.json(
-      {
-        error: 'Erro ao enviar documento',
-        details: String(err?.message || err),  // 👈 devolve o erro legível
-      },
-      { status: 500 }
-    );
-  }
-    // normaliza o tipo para o enum do Prisma: 'NF' | 'BOLETO' | 'OTHER'
-    let type: 'NF' | 'BOLETO' | 'OTHER' = 'OTHER';
-
-    if (rawType === 'NF' || rawType === 'BOLETO' || rawType === 'OTHER') {
+    if (rawType === "NF" || rawType === "BOLETO" || rawType === "OTHER") {
       type = rawType;
-    } else if (rawType?.toLowerCase().includes('nota')) {
-      type = 'NF';
-    } else if (rawType?.toLowerCase().includes('boleto')) {
-      type = 'BOLETO';
+    } else if (rawType?.toLowerCase().includes("nota")) {
+      type = "NF";
+    } else if (rawType?.toLowerCase().includes("boleto")) {
+      type = "BOLETO";
     }
 
-    // competência: se vier algo vazio ou "-------- de ----", ignora
+    // competência opcional
     let competence: string | null = null;
     if (
       competenceRaw &&
-      !competenceRaw.includes('----') &&
-      competenceRaw.trim() !== ''
+      !competenceRaw.includes("----") &&
+      competenceRaw.trim() !== ""
     ) {
       competence = competenceRaw;
     }
 
-    // converte file em buffer
+    // converte File em Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadDir =
-      process.env.FILE_UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+    const ext = path.extname(file.name) || "";
+    const randomName = crypto.randomBytes(16).toString("hex") + ext;
+    const key = `docs/${clientId}/${randomName}`;
 
-    await mkdir(uploadDir, { recursive: true });
+    // sobe pro Supabase
+    const { url } = await uploadToSupabase({
+      buffer,
+      key,
+      contentType: file.type || "application/octet-stream",
+    });
 
-    const ext = path.extname(file.name) || '';
-    const randomName = crypto.randomBytes(16).toString('hex') + ext;
-    const filePath = path.join(uploadDir, randomName);
-
-    await writeFile(filePath, buffer);
-
+    // salva no banco: guardo a KEY, e se quiser a URL tb
     const doc = await prisma.document.create({
       data: {
         clientId,
         uploadedById: user!.id,
-        type,                         // enum padronizado
-        competence,                   // pode ser null se o campo no schema for opcional
-        path: filePath,
+        type,
+        competence,
+        path: key,         // path agora é a key no storage
         originalName: file.name,
+        // se quiser, cria um campo "url" no schema e salva url
       } as any,
     });
 
     return NextResponse.json({ ok: true, document: doc });
-  } catch (err) {
-    console.error('Erro no upload:', err);
+  } catch (err: any) {
+    console.error("Erro no upload:", err);
     return NextResponse.json(
-      { error: 'Erro ao enviar documento' },
+      {
+        error: "Erro ao enviar documento",
+        details: String(err?.message || err),
+      },
       { status: 500 }
     );
   }
