@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 type Document = {
   id: string;
   originalName: string;
-  type: 'NF' | 'BOLETO' | 'OTHER';
+  type: 'NF' | 'DAS' | 'OTHER' | 'DCTFWeb' | 'ST' | 'DIFAL';
   createdAt: string;
   competencia?: string | null;
 };
@@ -117,11 +117,17 @@ export default function ClienteDocumentos() {
                     </div>
 
                     <span className="tag">
-                      {doc.type === 'NF'
-                        ? 'Nota Fiscal'
-                        : doc.type === 'BOLETO'
-                        ? 'Boleto'
-                        : 'Outro'}
+                            {doc.type === 'NF'
+                              ? 'Nota Fiscal'
+                              : doc.type === 'DIFAL'
+                              ? 'DIFAL'
+                              : doc.type === 'DAS'
+                              ? 'DAS'
+                              : doc.type === 'DCTFWeb'
+                              ? 'DCTFWeb'
+                              : doc.type === 'ST'
+                              ? 'ST'
+                              : 'Outro'}
                     </span>
 
                     <a
