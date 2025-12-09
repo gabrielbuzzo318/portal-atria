@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import path from "path";
 import { prisma } from "@/lib/prisma";
-import { getAuthUser, requireRole } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 import { uploadToSupabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getAuthUser();
-    requireRole(user, ["ACCOUNTANT"]); // só a Ester envia docs
+    // 👇 só a Ester (contadora) pode enviar documentos
+    const user = await getAuthUser();
+
+    if (!user || user.role !== "ACCOUNTANT") {
+      return NextResponse.json(
+        { error: "Não autorizado" },
+        { status: 403 }
+      );
+    }
 
     const formData = await req.formData();
 
@@ -24,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // normaliza tipo pro enum
+    // normaliza tipo pro enum (NF, BOLETO, OTHER)
     let type: "NF" | "BOLETO" | "OTHER" = "OTHER";
 
     if (rawType === "NF" || rawType === "BOLETO" || rawType === "OTHER") {
@@ -64,9 +71,9 @@ export async function POST(req: NextRequest) {
     const doc = await prisma.document.create({
       data: {
         clientId,
-        uploadedById: user!.id,
+        uploadedById: user.id,   // 👈 agora o user existe
         type,
-        competence,          // 👈 agora bate com o schema E com o banco
+        competencia: competence, // 👈 nome igual ao schema
         path: key,
         originalName: file.name,
         storedName: randomName,
@@ -79,7 +86,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Erro ao enviar documento",
-        details: String(err?.message || err),
+        details: err instanceof Error ? err.message : String(err),
       },
       { status: 500 }
     );

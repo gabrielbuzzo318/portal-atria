@@ -1,50 +1,49 @@
-// Gera o client do Prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-// Datasource: SQLite, usando a env DATABASE_URL
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-
 model User {
-  id    String @id @default(cuid())
-  name  String
-  email String @unique
-
-  // senha hash, usada no login
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
   passwordHash String
 
-  // 'ACCOUNTANT' ou 'CLIENT'
-  role String @default("CLIENT")
+  // papel do usuário: "ACCOUNTANT" ou "CLIENT"
+  role         String   @default("CLIENT")
 
-  // documentos em que ele é o cliente
+  // documentos em que ele é o CLIENTE (dono)
   clientDocuments   Document[] @relation("ClientDocuments")
-  // documentos que ele fez upload (no caso, a Ester)
+
+  // documentos que ele fez upload (ex.: Ester)
   uploadedDocuments Document[] @relation("UploadedDocuments")
+
+  createdAt DateTime @default(now())
 }
 
 model Document {
-  id String @id @default(cuid())
+  id           String   @id @default(cuid())
 
-  // cliente dono do documento
-  client   User   @relation("ClientDocuments", fields: [clientId], references: [id])
-  clientId String
+  // RELAÇÃO COM O CLIENTE (dono do documento)
+  client       User     @relation("ClientDocuments", fields: [clientId], references: [id])
+  clientId     String
 
-  // quem fez o upload (normalmente a contadora)
-  uploadedBy   User   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  // RELAÇÃO COM QUEM FEZ O UPLOAD
+  uploadedBy   User     @relation("UploadedDocuments", fields: [uploadedById], references: [id])
   uploadedById String
 
-  // tipo: NF, BOLETO, OTHER (guardado como string simples)
-  type String @default("OTHER")
+  // tipo: "NF", "BOLETO", "OTHER" (salvo como string)
+  type         String   @default("OTHER")
 
+  // competência opcional (tipo "01/2025")
+  competencia  String?
+
+  path         String
   originalName String
   storedName   String
-  path         String
   createdAt    DateTime @default(now())
-
-  // competência no formato YYYY-MM (ex: 2025-01)
-  competence String?
 }
