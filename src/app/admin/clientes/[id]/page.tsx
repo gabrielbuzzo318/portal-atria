@@ -12,7 +12,7 @@ type Client = {
 type Document = {
   id: string;
   originalName: string;
-  type: 'NF' | 'BOLETO' | 'OTHER';
+  type: 'NF' | 'DAS' | 'OTHER' | 'DCTFWeb' | 'ST' | 'DIFAL';
   createdAt: string;
   competencia?: string | null;
 };
@@ -52,7 +52,7 @@ export default function ClienteDocsPage() {
   const [loading, setLoading] = useState(true);
 
   const [file, setFile] = useState<File | null>(null);
-  const [docType, setDocType] = useState<'NF' | 'BOLETO' | 'OTHER'>('NF');
+  const [docType, setDocType] = useState<'NF' | 'DAS' | 'OTHER' | 'DCTFWeb' | 'ST' | 'DIFAL'>('NF');
   const [competencia, setCompetencia] = useState<string>(''); // YYYY-MM
   const [uploading, setUploading] = useState(false);
 
@@ -144,11 +144,14 @@ export default function ClienteDocsPage() {
                   className="form-input"
                   value={docType}
                   onChange={e =>
-                    setDocType(e.target.value as 'NF' | 'BOLETO' | 'OTHER')
+                    setDocType(e.target.value as 'NF' | 'DAS' | 'OTHER' | 'DCTFWeb' | 'ST' | 'DIFAL')
                   }
                 >
                   <option value="NF">Nota Fiscal</option>
-                  <option value="BOLETO">Boleto</option>
+                  <option value="DAS">DAS</option>
+                  <option value="DCTFWeb">DCTFWeb</option>
+                  <option value="ST">ST</option>
+                  <option value="DIFAL">DIFAL</option>
                   <option value="OTHER">Outro</option>
                 </select>
               </div>
@@ -238,8 +241,14 @@ export default function ClienteDocsPage() {
                           <span className="tag">
                             {doc.type === 'NF'
                               ? 'Nota Fiscal'
-                              : doc.type === 'BOLETO'
-                              ? 'Boleto'
+                              : doc.type === 'DIFAL'
+                              ? 'DIFAL'
+                              : doc.type === 'DAS'
+                              ? 'DAS'
+                              : doc.type === 'DCTFWeb'
+                              ? 'DCTFWeb'
+                              : doc.type === 'ST'
+                              ? 'ST'
                               : 'Outro'}
                           </span>
 
