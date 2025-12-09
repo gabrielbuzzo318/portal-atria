@@ -77,18 +77,15 @@ export default function ClienteDocumentos() {
         <div className="card">
           <div className="filters">
             <span className="filters-label">Período:</span>
-            <select
-              className="filters-select"
-              value={selectedPeriod}
-              onChange={e => setSelectedPeriod(e.target.value)}
-            >
-              <option value="">Todos</option>
-              {periods.map(p => (
-                <option key={p} value={p}>
-                  {formatPeriodLabel(p)}
-                </option>
-              ))}
-            </select>
+            <select name="type" defaultValue="Nota Fiscal">
+  <option value="Nota Fiscal">Nota Fiscal</option>
+  <option value="DAS">DAS</option>
+  <option value="DCTFWeb">DCTFWeb</option>
+  <option value="ST">ST</option>
+  <option value="DIFAL">DIFAL</option>
+  <option value="Outro">Outro</option>
+</select>
+
           </div>
 
           {filteredDocs.length === 0 && (

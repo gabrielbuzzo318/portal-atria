@@ -32,15 +32,11 @@ export async function POST(req: NextRequest) {
     }
 
     // normaliza tipo pro enum (NF, BOLETO, OTHER)
-    let type: "NF" | "BOLETO" | "OTHER" = "OTHER";
+    let type: string = "Outro";
 
-    if (rawType === "NF" || rawType === "BOLETO" || rawType === "OTHER") {
-      type = rawType;
-    } else if (rawType?.toLowerCase().includes("nota")) {
-      type = "NF";
-    } else if (rawType?.toLowerCase().includes("boleto")) {
-      type = "BOLETO";
-    }
+if (rawType && rawType.trim() !== "") {
+  type = rawType;
+}
 
     // competência opcional
     let competence: string | null = null;
