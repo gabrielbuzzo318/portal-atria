@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
       type = "BOLETO";
     }
 
-    // competência opcional
-    let competence: string | null = null;
+        // competência opcional
+    let competencia: string | null = null;
     if (
       competenceRaw &&
       !competenceRaw.includes("----") &&
       competenceRaw.trim() !== ""
     ) {
-      competence = competenceRaw;
+      competencia = competenceRaw;
     }
 
     // converte File em Buffer
@@ -60,18 +60,20 @@ export async function POST(req: NextRequest) {
       contentType: file.type || "application/octet-stream",
     });
 
-    // salva no banco: guardo a KEY, e se quiser a URL tb
+    // salva no banco
     const doc = await prisma.document.create({
       data: {
         clientId,
         uploadedById: user!.id,
         type,
-        competence,
-        path: key,         // path agora é a key no storage
+        competencia,            // 👈 nome do campo NO SCHEMA
+        path: key,              // chave completa no storage
         originalName: file.name,
-        // se quiser, cria um campo "url" no schema e salva url
-      } as any,
+        storedName: randomName, // 👈 nome físico do arquivo
+      },
     });
+
+
 
     return NextResponse.json({ ok: true, document: doc });
   } catch (err: any) {
