@@ -46,5 +46,5 @@ model Document {
   createdAt    DateTime @default(now())
 
   // competência no formato YYYY-MM (ex: 2025-01)
-  competencia String?
+  competence String?
 }

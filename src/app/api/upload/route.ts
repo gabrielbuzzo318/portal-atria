@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
       type = "BOLETO";
     }
 
-        // competência opcional
-    let competencia: string | null = null;
+    // competência opcional
+    let competence: string | null = null;
     if (
       competenceRaw &&
       !competenceRaw.includes("----") &&
       competenceRaw.trim() !== ""
     ) {
-      competencia = competenceRaw;
+      competence = competenceRaw;
     }
 
     // converte File em Buffer
@@ -66,14 +66,12 @@ export async function POST(req: NextRequest) {
         clientId,
         uploadedById: user!.id,
         type,
-        competencia,            // 👈 nome do campo NO SCHEMA
-        path: key,              // chave completa no storage
+        competence,          // 👈 agora bate com o schema E com o banco
+        path: key,
         originalName: file.name,
-        storedName: randomName, // 👈 nome físico do arquivo
+        storedName: randomName,
       },
     });
-
-
 
     return NextResponse.json({ ok: true, document: doc });
   } catch (err: any) {
