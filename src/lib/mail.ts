@@ -1,62 +1,53 @@
-import nodemailer from 'nodemailer';
+export async function sendDocumentEmail({
+  to,
+  clientName,
+  fileName,
+  docType,
+  competence,
+  url,
+  buffer,     // 👈 AGORA RECEBE O ARQUIVO
+}: SendDocumentEmailParams & { buffer: Buffer }) {
 
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = Number(process.env.SMTP_PORT || 587);
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
-const fromEmail = process.env.MAIL_FROM || 'nao-responda@atria.com.br';
-
-if (!smtpHost || !smtpUser || !smtpPass) {
-  console.warn(
-    '[mail] SMTP não configurado. E-mails não serão enviados em produção.',
-  );
-}
-
-const transporter =
-  smtpHost && smtpUser && smtpPass
-    ? nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465, // 465 = SSL
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      })
-    : null;
-
-export async function sendDocumentEmailNotification(params: {
-  to: string;
-  clientName: string;
-  docName: string;
-}) {
-  if (!transporter) {
-    console.log('[mail] Sem transporter configurado, pulando envio de e-mail');
+  if (!canSend || !transporter) {
+    console.warn("[mail] SMTP não configurado. Pula envio de e-mail.");
     return;
   }
 
-  const { to, clientName, docName } = params;
+  const subject = `Novo documento enviado – ${docType}`;
 
-  const subject = 'Novo documento disponível - ATRIA Contabilidade';
-  const text = `Olá, ${clientName}!
+  const competenciaTexto = competence
+    ? `<p><strong>Competência:</strong> ${competence}</p>`
+    : "";
 
-A ATRIA Contabilidade acabou de disponibilizar um novo documento para você:
+  const html = `
+    <p>Olá, ${clientName}!</p>
 
-- Arquivo: ${docName}
+    <p>Um novo documento foi enviado para você através da <strong>Atria Contabilidade</strong>.</p>
 
-Acesse o Portal ATRIA Contabilidade para visualizar e baixar:
+    <p>
+      <strong>Tipo:</strong> ${docType}<br/>
+      <strong>Arquivo:</strong> ${fileName}<br/>
+      ${competenciaTexto}
+    </p>
 
-https://seu-portal-aqui.com.br/login
+    <p>O documento está anexado neste e-mail.</p>
 
-(até colocar o domínio certo, pode usar o link local de desenvolvimento)
+    <p>Você também pode acessar pelo portal se preferir:</p>
+    <p><a href="${url}" target="_blank">${url}</a></p>
 
-Abraços,
-ATRIA Contabilidade`;
+    <p>Abraço da equipe 💙</p>
+  `;
 
   await transporter.sendMail({
-    from: fromEmail,
+    from: smtpFrom,
     to,
     subject,
-    text,
+    html,
+    attachments: [
+      {
+        filename: fileName,
+        content: buffer,  // 👈 AQUI VAI O ARQUIVO
+      },
+    ],
   });
 }
