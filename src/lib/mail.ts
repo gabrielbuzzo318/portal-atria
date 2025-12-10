@@ -1,27 +1,14 @@
-// src/lib/mail.ts
 import nodemailer from "nodemailer";
 
 const smtpHost = process.env.SMTP_HOST;
-const smtpPort = Number(process.env.SMTP_PORT ?? 587);
+const smtpPort = Number(process.env.SMTP_PORT || "587");
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
-const smtpFrom = process.env.SMTP_FROM ?? "no-reply@example.com";
+const smtpFrom = process.env.SMTP_FROM || smtpUser;
 
-const canSend =
-  smtpHost && smtpPort && smtpUser && smtpPass ? true : false;
-
-const transporter = canSend
-  ? nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465, // 465 = SSL, resto normalmente STARTTLS
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    })
-  : null;
-
+/**
+ * Envia e-mail para o cliente com o documento em anexo.
+ */
 type SendDocumentEmailParams = {
   to: string;
   clientName: string;
@@ -31,57 +18,90 @@ type SendDocumentEmailParams = {
   url: string;
 };
 
-export async function sendDocumentEmail({
-  to,
-  clientName,
-  fileName,
-  docType,
-  competence,
-  url,
-  buffer,
-}: SendDocumentEmailParams & { buffer: Buffer }) {
-  if (!canSend || !transporter) {
+export async function sendDocumentEmail(
+  params: SendDocumentEmailParams & { buffer: Buffer }
+) {
+  const { to, clientName, fileName, docType, competence, url, buffer } = params;
+
+  // Se não tiver SMTP configurado, só loga e sai
+  if (!smtpHost || !smtpUser || !smtpPass) {
     console.warn(
-      "[mail] SMTP não configurado. Pula envio de e-mail de documento."
+      "[MAIL] SMTP não configurado (SMTP_HOST/SMTP_USER/SMTP_PASS). E-mail NÃO enviado."
     );
     return;
   }
 
-  const subject = `Novo documento disponível – ${docType}`;
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465, // 465 = SSL; 587 = TLS
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
 
-  const competenciaTexto = competence
-    ? `<p><strong>Competência:</strong> ${competence}</p>`
-    : "";
+  const subject = `Novo documento disponível: ${docType}`;
+  const compText = competence ? `Competência: ${competence}\n\n` : "";
 
-  const html = `
-    <p>Olá, ${clientName}!</p>
+  const textBody = [
+    `Olá, ${clientName}!`,
+    "",
+    `Um novo documento foi disponibilizado pela sua contabilidade.`,
+    "",
+    `Tipo: ${docType}`,
+    competence ? `Competência: ${competence}` : "",
+    "",
+    `Você pode acessá-lo pelo Portal da ATRA Contabilidade ou usar o anexo deste e-mail.`,
+    "",
+    `Link direto (caso queira abrir pelo navegador):`,
+    url,
+    "",
+    "Qualquer dúvida, é só chamar a Ester 🙂",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-    <p>Um novo documento foi enviado para você através do <strong>Portal de Documentos da Atria Contabilidade</strong>.</p>
+  const htmlBody = `
+    <p>Olá, <strong>${clientName}</strong>!</p>
+    <p>Um novo documento foi disponibilizado pela sua contabilidade.</p>
 
     <p>
       <strong>Tipo:</strong> ${docType}<br/>
-      <strong>Arquivo:</strong> ${fileName}<br/>
+      ${competence ? `<strong>Competência:</strong> ${competence}<br/>` : ""}
     </p>
-    ${competenciaTexto}
 
-    <p>Você pode acessar o documento pelo portal normalmente.</p>
+    <p>Você pode acessá-lo pelo Portal da ATRA Contabilidade ou usando o anexo deste e-mail.</p>
 
-    <p>Ou, se preferir, acesse diretamente pelo link abaixo:</p>
-    <p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>
+    <p>
+      <strong>Link direto:</strong><br/>
+      <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>
+    </p>
 
-    <p>Qualquer dúvida, é só falar com a gente. 💙</p>
+    <p>Qualquer dúvida, é só falar com a Ester 🙂</p>
   `;
 
-  await transporter.sendMail({
-    from: smtpFrom,
-    to,
-    subject,
-    html,
-    attachments: [
-      {
-        filename: fileName,
-        content: buffer,
-      },
-    ],
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: smtpFrom,
+      to,
+      subject,
+      text: textBody,
+      html: htmlBody,
+      attachments: [
+        {
+          filename: fileName,
+          content: buffer,
+        },
+      ],
+    });
+
+    console.log("[MAIL] E-mail de documento enviado com sucesso:", {
+      messageId: info.messageId,
+      to,
+    });
+  } catch (err) {
+    console.error("[MAIL] Erro ao enviar e-mail de documento:", err);
+    // não joga erro pra cima pra não quebrar o upload
+  }
 }
