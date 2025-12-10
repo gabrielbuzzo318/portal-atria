@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // tipo livre, mas com alguns códigos padrão
+    // tipo: você já está mandando códigos ("NF", "BOLETO", etc.) do front,
+    // mas deixo um fallback pra "OTHER"
     let type: string = "OTHER";
 
     if (rawType && rawType.trim() !== "") {
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
       select: { name: true, email: true },
     });
 
+    // tenta enviar o e-mail, mas NÃO deixa isso quebrar o upload
     if (client?.email) {
       try {
         await sendDocumentEmail({
@@ -96,6 +98,7 @@ export async function POST(req: NextRequest) {
         });
       } catch (e) {
         console.error("Erro ao enviar e-mail de documento:", e);
+        // não damos throw aqui justamente pra não dar 500 no upload
       }
     }
 
